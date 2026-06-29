@@ -121,28 +121,10 @@ for file_url in tqdm(PARQUET_FILES, desc="Downloading parquet files"):
         row["_frame"] = frame_count
         sessions.setdefault(session, []).append(row)
         frame_count += 1
+        if frame_count >= MAX_FRAMES: break
+    if frame_count >= MAX_FRAMES: break
 
     print(f"  {file_url.split('/')[-1]}: {len(sessions)} sessions so far, {frame_count} total frames")
-
-# Parse frames, group by recording session
-sessions = {}
-frame_count = 0
-for sample in tqdm(ds, total=MAX_FRAMES, desc="Parsing frames"):
-    try:
-        meta = json.loads(sample["jpg.json"].decode("utf-8")
-                        if isinstance(sample["jpg.json"], bytes) else sample["jpg.json"])
-    except: continue
-
-    fn = meta.get("file_name", "")
-    session = fn.split("/")[0] if "/" in fn else "unknown"
-
-    row = {f: meta.get(f) for f in PAPER_FEATURES}
-    row[TARGET] = int(meta.get(TARGET, 0))
-    row["_frame"] = frame_count  # preserve temporal order
-
-    sessions.setdefault(session, []).append(row)
-    frame_count += 1
-    if frame_count >= MAX_FRAMES: break
 
 # Filter sessions with enough frames
 valid = {k: v for k, v in sessions.items() if len(v) >= SEQUENCE_WINDOW * 3}
@@ -182,20 +164,17 @@ print(f"Split: {len(train_sess)} train / {len(val_sess)} val / {len(test_sess)} 
 def build_sequences(df, session_set, seq_len=SEQUENCE_WINDOW):
     X_list, y_list = [], []
     for sess in session_set:
-        frames = df[df["_session"] == sess] if "_session" in df.columns else \
-                  [r for s, fs in valid.items() for r in fs if s == sess]
-        if isinstance(frames, pd.DataFrame):
-            frames = frames.reset_index(drop=True)
-        else:
-            frames = pd.DataFrame(frames)
-
+        frames = df[df["_session"] == sess]
         if len(frames) < seq_len: continue
+
+        frames = frames.reset_index(drop=True)
         vals = frames[PAPER_FEATURES].values.astype(np.float32)
         labels = frames["_y"].values.astype(np.int64)
         for i in range(0, len(vals) - seq_len + 1, seq_len // 2):  # stride = seq_len/2
             X_list.append(vals[i:i+seq_len])
             y_list.append(labels[min(i+seq_len-1, len(labels)-1)])
-    if not X_list: return np.array([]).reshape(0,1,1), np.array([])
+    if not X_list:
+        return np.array([]).reshape(0, 1, len(PAPER_FEATURES)), np.array([])
     return np.array(X_list), np.array(y_list)
 
 # Rebuild df with _session column from the session mapping
@@ -240,7 +219,10 @@ def train_lstm(model, X_tr, y_tr, X_val, y_val, epochs=2, batch_size=4):
                 loss = crit(pred, nn.functional.one_hot(by.long(), n_classes).float())
                 loss.backward(); opt.step()
             sched.step(); total_loss += loss.item()
-        # Eval
+        # Eval (skip if no validation data)
+        if len(X_val) == 0:
+            print(f"  Epoch {ep+1}: loss={total_loss/len(loader):.4f}")
+            continue
         model.eval()
         with torch.no_grad():
             vp = model(torch.FloatTensor(X_val).to(DEVICE)).argmax(-1).cpu()
