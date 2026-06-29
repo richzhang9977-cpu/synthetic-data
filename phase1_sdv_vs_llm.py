@@ -24,14 +24,6 @@ import subprocess
 packages = [
     "sdv>=1.10.0",          # CTGAN, TVAE, GaussianCopula, PAR
     "datasets>=2.14.0",     # HuggingFace datasets
-    "xgboost>=1.7.0",
-    "scikit-learn>=1.2.0",
-    "pandas>=2.0.0",
-    "numpy>=1.24.0",
-    "matplotlib>=3.7.0",
-    "seaborn>=0.12.0",
-    "tqdm>=4.65.0",
-    "torch>=2.0.0",         # For GReaT & REaLTabFormer
     "be-great>=0.0.7",      # GReaT: LLM-based tabular generation
     "realtabformer>=0.1.0", # REaLTabFormer
     "peft>=0.7.0",          # Required for GReaT LoRA fine-tuning
@@ -72,7 +64,6 @@ from sklearn.metrics import (
     classification_report, f1_score, accuracy_score,
     confusion_matrix, mean_squared_error, r2_score
 )
-import xgboost as xgb
 
 # Datasets
 from datasets import load_dataset
@@ -245,11 +236,9 @@ print(f"\n📊 Train: {len(train_df):,} rows | Test: {len(test_df):,} rows")
 print(f"📊 Train label dist:\n{train_df[TARGET].value_counts(normalize=True).sort_index()}")
 
 # %% [markdown]
-# ## 5. Baseline Model (Upper Bound)
-# Train XGBoost on real data as the ML utility upper bound
+# ## 5. Data Encoding (shared across all experiments)
 
 # %%
-# Category encoding
 from sklearn.preprocessing import OrdinalEncoder
 
 X_train_enc = X_train.copy()
@@ -263,21 +252,8 @@ X_test_enc[cat_cols] = oe.transform(X_test[cat_cols])
 y_train_enc = le.transform(y_train)
 y_test_enc = le.transform(y_test)
 
-# Train
-xgb_real = xgb.XGBClassifier(
-    n_estimators=200, max_depth=8, learning_rate=0.1,
-    random_state=config.random_state, eval_metric="mlogloss"
-)
-xgb_real.fit(X_train_enc, y_train_enc)
-y_pred_real = xgb_real.predict(X_test_enc)
-
-BASELINE_REAL_F1 = f1_score(y_test_enc, y_pred_real, average="macro")
-BASELINE_REAL_ACC = accuracy_score(y_test_enc, y_pred_real)
-
-print(f"🔵 REAL DATA BASELINE (Upper Bound)")
-print(f"   Macro-F1: {BASELINE_REAL_F1:.4f}")
-print(f"   Accuracy: {BASELINE_REAL_ACC:.4f}")
-print(f"\n{classification_report(y_test_enc, y_pred_real, target_names=[str(c) for c in le.classes_])}")
+# Baseline will be measured using paper's LSTM (see indoor_frames_lstm.py / export_and_train.py)
+# For this notebook, we skip the baseline and focus on synthetic data generation & statistical fidelity.
 
 # %% [markdown]
 # ## 6. Synthetic Data Generation
@@ -780,235 +756,12 @@ plt.savefig(os.path.join(config.save_dir, "target_distribution.png"), dpi=150, b
 plt.show()
 
 # %% [markdown]
-# ## 9. Dimension 2: ML Utility — TSTR (Train on Synthetic, Test on Real)
-
-# %%
-def evaluate_tstr(
-    synthetic_df: pd.DataFrame,
-    X_test: pd.DataFrame,
-    y_test_enc: np.ndarray,
-    cat_cols: List[str],
-    cont_cols: List[str],
-    target_col: str,
-    label_encoder: LabelEncoder,
-    ordinal_encoder,
-    n_classes: int,
-    random_state: int = 42
-) -> Dict[str, float]:
-    """Train on Synthetic, Test on Real (TSTR) evaluation"""
-
-    # Prepare synthetic training data
-    synth_train = synthetic_df.copy()
-
-    # Ensure target column exists
-    if target_col not in synth_train.columns:
-        return {"macro_f1": float("nan"), "accuracy": float("nan"),
-                "f1_vs_real_baseline": float("nan"), "per_class_f1": {}}
-
-    # Encode categorical features
-    for col in cat_cols:
-        if col in synth_train.columns:
-            synth_train[col] = synth_train[col].astype(str)
-
-    # Use the same OrdinalEncoder from training set
-    X_synth = synth_train[cat_cols + cont_cols].copy()
-    try:
-        X_synth[cat_cols] = ordinal_encoder.transform(X_synth[cat_cols])
-    except Exception:
-        # fallback: re-fit
-        oe2 = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)
-        X_synth[cat_cols] = oe2.fit_transform(X_synth[cat_cols])
-
-    # Encode target
-    y_synth_raw = synth_train[target_col].astype(str)
-    try:
-        y_synth = label_encoder.transform(y_synth_raw)
-    except ValueError:
-        # Synthetic data may contain labels never seen during training
-        valid_mask = y_synth_raw.isin(label_encoder.classes_)
-        valid_labels = y_synth_raw[valid_mask]
-        if len(valid_labels) == 0:
-            return {"macro_f1": float("nan"), "accuracy": float("nan"),
-                    "f1_vs_real_baseline": float("nan"), "per_class_f1": {}}
-        y_synth = label_encoder.transform(valid_labels)
-        X_synth = X_synth.loc[valid_mask]
-
-    if len(X_synth) < 100:
-        return {"macro_f1": float("nan"), "accuracy": float("nan"),
-                "f1_vs_real_baseline": float("nan"), "per_class_f1": {}}
-
-    # Train XGBoost
-    model = xgb.XGBClassifier(
-        n_estimators=200, max_depth=8, learning_rate=0.1,
-        random_state=random_state, eval_metric="mlogloss", verbosity=0
-    )
-    model.fit(X_synth, y_synth)
-
-    # Test
-    y_pred = model.predict(X_test)
-    macro_f1 = f1_score(y_test_enc, y_pred, average="macro")
-    acc = accuracy_score(y_test_enc, y_pred)
-
-    # Per-class F1
-    per_class = f1_score(y_test_enc, y_pred, average=None)
-    per_class_dict = {str(label_encoder.classes_[i]): round(v, 4) for i, v in enumerate(per_class)}
-
-    return {
-        "macro_f1": macro_f1,
-        "accuracy": acc,
-        "f1_vs_real_baseline": macro_f1 / BASELINE_REAL_F1 if BASELINE_REAL_F1 > 0 else 0,
-        "per_class_f1": per_class_dict
-    }
-
-# %%
-print("🎯 TSTR Evaluation: Train on Synthetic, Test on Real\n")
-print(f"   Real data baseline: Macro-F1 = {BASELINE_REAL_F1:.4f}\n")
-
-tstr_results = {}
-
-for method_name, (synth_df, _) in tqdm(valid_methods.items(), desc="TSTR evaluation"):
-    result = evaluate_tstr(
-        synth_df,
-        X_test_enc,
-        y_test_enc,
-        cat_cols=[c for c in cat_cols if c in synth_df.columns],
-        cont_cols=[c for c in cont_cols if c in synth_df.columns],
-        target_col=TARGET if TARGET in synth_df.columns else "Label",
-        label_encoder=le,
-        ordinal_encoder=oe,
-        n_classes=n_classes,
-        random_state=config.random_state
-    )
-    tstr_results[method_name] = result
-
-# Convert to DataFrame
-tstr_df = pd.DataFrame({
-    method: {"Macro-F1": r["macro_f1"], "Accuracy": r["accuracy"],
-             "F1 vs Real (%)": r["f1_vs_real_baseline"] * 100}
-    for method, r in tstr_results.items()
-}).T
-
-print("\n" + "=" * 70)
-print("🎯 TSTR RESULTS (Train on Synthetic, Test on Real)")
-print("=" * 70)
-print(tstr_df.round(4).to_string())
-
-# %% [markdown]
-# ### 9.1 TSTR Visualization
-
-# %%
-fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-# Subplot 1: Macro-F1 comparison bar chart
-ax = axes[0]
-methods_order = tstr_df.sort_values("Macro-F1", ascending=True).index
-x = np.arange(len(methods_order))
-width = 0.35
-
-real_f1 = BASELINE_REAL_F1
-
-ax.barh(x, tstr_df.loc[methods_order, "Macro-F1"], color="#4dabf7", label="Synthetic-trained")
-ax.axvline(x=real_f1, color="red", linestyle="--", linewidth=2, label=f"Real-trained ({real_f1:.3f})")
-ax.set_yticks(x)
-ax.set_yticklabels(methods_order, fontsize=10)
-ax.set_xlabel("Macro-F1")
-ax.set_title("ML Utility: Macro-F1 Comparison", fontweight="bold")
-ax.legend(fontsize=9)
-
-# Subplot 2: F1 vs Real baseline %
-ax = axes[1]
-vals = tstr_df["F1 vs Real (%)"].dropna().sort_values(ascending=True)
-ax.barh(range(len(vals)), vals.values, color=["#ff6b6b" if v < 50 else "#ffd43b" if v < 80 else "#51cf66" for v in vals.values])
-ax.set_yticks(range(len(vals)))
-ax.set_yticklabels(vals.index, fontsize=10)
-ax.axvline(x=100, color="gray", linestyle="--", alpha=0.5, label="100% (Real baseline)")
-ax.axvline(x=80, color="orange", linestyle=":", alpha=0.5, label="80% threshold")
-ax.set_xlabel("F1 vs Real Baseline (%)")
-ax.set_title("Relative ML Utility (% of Real-trained F1)", fontweight="bold")
-ax.legend(fontsize=9)
-
-fig.suptitle("TSTR Benchmark: SDV vs LLM Methods", fontsize=14, fontweight="bold")
-plt.tight_layout()
-plt.savefig(os.path.join(config.save_dir, "tstr_comparison.png"), dpi=150, bbox_inches="tight")
-plt.show()
-
-# %% [markdown]
-# ### 9.2 Per-Class F1 Heatmap
-
-# %%
-# Collect per-class F1
-per_class_data = {}
-for method, result in tstr_results.items():
-    if isinstance(result.get("per_class_f1"), dict):
-        per_class_data[method] = result["per_class_f1"]
-
-if per_class_data:
-    per_class_df = pd.DataFrame(per_class_data).T
-    per_class_df.index.name = "Method"
-
-    fig, ax = plt.subplots(figsize=(12, max(4, len(per_class_df) * 0.8)))
-    sns.heatmap(per_class_df, annot=True, fmt=".3f", cmap="RdYlGn", center=0.5,
-                vmin=0, vmax=1, ax=ax, linewidths=0.5, cbar_kws={"label": "F1 Score"})
-    ax.set_title("Per-Class F1: Real Data Test Set (Trained on Synthetic Data)", fontsize=13, fontweight="bold")
-    ax.set_xlabel("Thermal Comfort Class")
-    plt.tight_layout()
-    plt.savefig(os.path.join(config.save_dir, "per_class_f1.png"), dpi=150, bbox_inches="tight")
-    plt.show()
-else:
-    print("No per-class F1 data available.")
-
-# %% [markdown]
-# ## 10. Comprehensive Results Table
-
-# %%
-print("=" * 80)
-print("📊 PHASE 1 COMPREHENSIVE RESULTS")
-print("=" * 80)
-
-# Merge fidelity and TSTR results
-combined = fidelity_df.copy()
-for method in combined.index:
-    if method in tstr_results:
-        combined.loc[method, "macro_f1"] = tstr_results[method]["macro_f1"]
-        combined.loc[method, "f1_vs_real_pct"] = tstr_results[method]["f1_vs_real_baseline"] * 100
-
-# Calculate composite rankings
-ranking_cols = ["wasserstein_mean", "ks_mean", "js_divergence_mean", "correlation_diff"]
-available_ranking_cols = [c for c in ranking_cols if c in combined.columns]
-
-for col in available_ranking_cols:
-    combined[f"{col}_rank"] = combined[col].rank(ascending=True)  # lower is better
-
-# TSTR ranking (higher is better)
-if "macro_f1" in combined.columns:
-    combined["tstr_rank"] = combined["macro_f1"].rank(ascending=False)
-
-# Overall ranking
-rank_cols = [f"{c}_rank" for c in available_ranking_cols]
-if "tstr_rank" in combined.columns:
-    rank_cols.append("tstr_rank")
-if rank_cols:
-    combined["overall_rank"] = combined[rank_cols].mean(axis=1).rank()
-
-# Display
-display_cols = available_ranking_cols + ["correlation_diff", "generation_time_s", "macro_f1", "f1_vs_real_pct", "overall_rank"]
-display_cols = [c for c in display_cols if c in combined.columns]
-
-print(combined[display_cols].round(4).to_string())
-print(f"\n🏆 Overall winner: {combined['overall_rank'].idxmin() if 'overall_rank' in combined.columns else 'N/A'}")
-print(f"📁 Results saved to: {config.save_dir}")
-
-# Save results
-combined.to_csv(os.path.join(config.save_dir, "phase1_results.csv"))
-with open(os.path.join(config.save_dir, "phase1_summary.json"), "w") as f:
-    json.dump({
-        "fidelity": {k: {kk: vv for kk, vv in v.items() if not isinstance(vv, dict)} for k, v in fidelity_results.items()},
-        "tstr": {k: {kk: vv for kk, vv in v.items() if not isinstance(vv, dict)} for k, v in tstr_results.items()},
-        "baseline_real_f1": BASELINE_REAL_F1,
-        "config": {k: v for k, v in config.__dict__.items() if not k.startswith("_")}
-    }, f, indent=2)
-
-print("✅ Phase 1 complete!")
+# ## 9. ML Utility — TSTR (Train on Synthetic, Test on Real)
+#
+# TSTR evaluation uses the paper's LSTM architecture.
+# See `export_and_train.py` and `indoor_frames_lstm.py` for the full 2x2 matrix pipeline.
+#
+# For this notebook, we report only statistical fidelity (model-free, Section 8).
 
 # %% [markdown]
 # ## 11. Key Findings Summary & Next Steps
