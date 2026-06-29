@@ -80,13 +80,13 @@ PAPER_FEATURES = ["Radiation-Temp", "Wrist_Skin_Temperature",
 TARGET = "Label"
 SEQUENCE_WINDOW = 10
 SCALE = 7
-N_PARQUET_FILES = 6  # each file ~30-50MB, 6 files ≈ 180-300MB, ~120K frames
+N_PARQUET_FILES = 4  # each file ~373MB, 4 files ≈ 1.5GB, ~25K frames
 
 print(f"Downloading {N_PARQUET_FILES} indoor_frames parquet files...")
 
-# Parquet files are named: indoor_frames/train-00000-of-00200.parquet
+# Parquet files: indoor_frames/train-XXXXX-of-00268.parquet (268 files total)
 BASE_URL = "https://huggingface.co/datasets/kopetri/AutoTherm/resolve/main/indoor_frames"
-PARQUET_FILES = [f"{BASE_URL}/train-{i:05d}-of-00200.parquet" for i in range(N_PARQUET_FILES)]
+PARQUET_FILES = [f"{BASE_URL}/train-{i:05d}-of-00268.parquet" for i in range(N_PARQUET_FILES)]
 
 # Parse frames from parquet, grouping by recording session
 sessions = {}
