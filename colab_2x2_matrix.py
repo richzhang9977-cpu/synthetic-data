@@ -16,7 +16,7 @@ Runs entirely on Colab — no local CSV export needed.
 # %%
 # @title Install dependencies (~2 min)
 import sys, subprocess
-for pkg in ["sdv>=1.10.0", "datasets", "scikit-learn", "pandas", "numpy", "matplotlib", "seaborn", "tqdm"]:
+for pkg in ["sdv>=1.10.0", "scikit-learn", "pandas", "numpy", "matplotlib", "seaborn", "tqdm", "pyarrow"]:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", pkg])
 print("Done!")
 
@@ -27,7 +27,6 @@ import torch; import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import f1_score, accuracy_score, classification_report
-from datasets import load_dataset
 import matplotlib.pyplot as plt; import seaborn as sns
 from tqdm.auto import tqdm
 
@@ -69,16 +68,61 @@ class ThermalComfortLSTM(nn.Module):
 # Uses streaming — fast on Colab's network
 
 # %%
+# @title Robust data loading: download parquet files directly (avoids HF API tree timeout)
+import os, time, requests, io
+import pyarrow.parquet as pq
+
+os.environ["HF_HUB_DOWNLOAD_TIMEOUT"] = "300"
+
 # Config
 PAPER_FEATURES = ["Radiation-Temp", "Wrist_Skin_Temperature",
                    "Ambient_Temperature", "Ambient_Humidity"]
 TARGET = "Label"
 SEQUENCE_WINDOW = 10
 SCALE = 7
-MAX_FRAMES = 80000  # enough for multiple sessions on Colab
+N_PARQUET_FILES = 6  # each file ~30-50MB, 6 files ≈ 180-300MB, ~120K frames
 
-print(f"Loading indoor_frames (up to {MAX_FRAMES} frames)...")
-ds = load_dataset("kopetri/AutoTherm", "indoor_frames", streaming=True, split="train")
+print(f"Downloading {N_PARQUET_FILES} indoor_frames parquet files...")
+
+# Parquet files are named: indoor_frames/train-00000-of-00200.parquet
+BASE_URL = "https://huggingface.co/datasets/kopetri/AutoTherm/resolve/main/indoor_frames"
+PARQUET_FILES = [f"{BASE_URL}/train-{i:05d}-of-00200.parquet" for i in range(N_PARQUET_FILES)]
+
+# Parse frames from parquet, grouping by recording session
+sessions = {}
+frame_count = 0
+
+for file_url in tqdm(PARQUET_FILES, desc="Downloading parquet files"):
+    # Retry download
+    content = None
+    for retry in range(3):
+        try:
+            r = requests.get(file_url, timeout=60)
+            r.raise_for_status()
+            content = r.content
+            break
+        except Exception as e:
+            if retry == 2: raise
+            time.sleep(5)
+
+    # Read only jpg.json column (skip heavy jpg.jpg image data)
+    table = pq.read_table(io.BytesIO(content), columns=['jpg.json'])
+
+    for i in range(len(table)):
+        try:
+            meta = json.loads(table.column('jpg.json')[i].as_py())
+        except: continue
+
+        fn = meta.get("file_name", "")
+        session = fn.split("/")[0] if "/" in fn else "unknown"
+
+        row = {f: meta.get(f) for f in PAPER_FEATURES}
+        row[TARGET] = int(meta.get(TARGET, 0))
+        row["_frame"] = frame_count
+        sessions.setdefault(session, []).append(row)
+        frame_count += 1
+
+    print(f"  {file_url.split('/')[-1]}: {len(sessions)} sessions so far, {frame_count} total frames")
 
 # Parse frames, group by recording session
 sessions = {}
