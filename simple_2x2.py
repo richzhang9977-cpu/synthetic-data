@@ -159,14 +159,23 @@ train_flat = pd.DataFrame(train_frames_list)[FEATURES + [TARGET]]
 train_flat = train_flat.apply(pd.to_numeric, errors="coerce").fillna(0)
 train_flat[TARGET] = train_flat[TARGET].astype(int)
 
-le = LabelEncoder(); le.fit(sorted(train_flat[TARGET].unique()))
-train_flat["_y"] = le.transform(train_flat[TARGET])
+# Fit LabelEncoder on ALL labels (train + test)
+all_labels = sorted(set(int(f[TARGET]) for f in train_frames_list))
+for sess in test_sess:
+    if split_mode == "intra-session":
+        fr = valid[sess][int(len(valid[sess])*0.7):]
+    else:
+        fr = valid[sess]
+    for f in fr:
+        all_labels.add(int(f[TARGET]))
+all_labels = sorted(all_labels)
+
+le = LabelEncoder(); le.fit([str(l) for l in all_labels])
 n_classes = len(le.classes_); n_features = len(FEATURES)
 
-# Encode sequence labels
-y_train_enc = np.array([le.transform(pd.Series(y).astype(str))[0] if hasattr(le.transform(pd.Series(y).astype(str)), '__iter__') else le.transform(pd.Series(y).astype(str)) for y in y_train]) if len(y_train) > 0 else np.array([])
-y_test_enc = np.array([le.transform(pd.Series(y).astype(str))[0] if hasattr(le.transform(pd.Series(y).astype(str)), '__iter__') else le.transform(pd.Series(y).astype(str)) for y in y_test]) if len(y_test) > 0 else np.array([])
-y_train_enc = y_train_enc.astype(np.int64); y_test_enc = y_test_enc.astype(np.int64)
+# Encode sequence labels (simple, no unseen labels possible now)
+y_train_enc = le.transform([str(y) for y in y_train]).astype(np.int64) if len(y_train) > 0 else np.array([], dtype=np.int64)
+y_test_enc = le.transform([str(y) for y in y_test]).astype(np.int64) if len(y_test) > 0 else np.array([], dtype=np.int64)
 
 # Scale
 scaler = StandardScaler()
