@@ -200,6 +200,8 @@ print(f"   Real->Real: Acc={real_real['acc']:.4f} | F1={real_real['f1']:.4f}")
 # 5. SDV Synthesis (on flattened training frames)
 # ============================================================
 print("\n[4/6] SDV synthesis (from train frames only)...")
+import subprocess, sys
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "sdv"])
 from sdv.single_table import CTGANSynthesizer, TVAESynthesizer, GaussianCopulaSynthesizer
 from sdv.metadata import SingleTableMetadata
 
