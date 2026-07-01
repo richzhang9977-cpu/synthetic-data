@@ -113,7 +113,7 @@ lstm_real = ThermalComfortLSTM(n_features, n_classes).to(DEVICE)
 train_lstm(lstm_real, X_train_3d, y_train, X_test_3d, y_test, epochs=3)
 real_real = evaluate(lstm_real, X_test_3d, y_test)
 print(f"   Real→Real: Acc={real_real['acc']:.4f} | F1={real_real['f1']:.4f}")
-torch.save(lstm_real.state_dict(), "F:/synthetic/lstm_real_model.pt")
+torch.save(lstm_real.state_dict(), "lstm_real_model.pt")  # saves to Colab current dir
 
 # ============================================================
 # 5. SDV Synthesis
@@ -206,6 +206,5 @@ for sn in syn_names:
     ss = results.get(f"{sn}→{sn}", {"f1":0,"acc":0})
     print(f"{'Train on '+sn:>30s} | {sr['f1']:7.4f} {sr['acc']:7.4f} | {ss['f1']:7.4f} {ss['acc']:7.4f}")
 
-os.makedirs("F:/synthetic/results", exist_ok=True)
-pd.DataFrame(results).T.to_csv("F:/synthetic/results/simple_2x2.csv")
+pd.DataFrame(results).T.to_csv("simple_2x2_results.csv")
 print("\nDONE")
