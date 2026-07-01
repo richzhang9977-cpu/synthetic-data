@@ -160,7 +160,7 @@ train_flat = train_flat.apply(pd.to_numeric, errors="coerce").fillna(0)
 train_flat[TARGET] = train_flat[TARGET].astype(int)
 
 # Fit LabelEncoder on ALL labels (train + test)
-all_labels = sorted(set(int(f[TARGET]) for f in train_frames_list))
+all_labels = set(int(f[TARGET]) for f in train_frames_list)
 for sess in test_sess:
     if split_mode == "intra-session":
         fr = valid[sess][int(len(valid[sess])*0.7):]
