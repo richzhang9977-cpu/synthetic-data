@@ -1,3 +1,15 @@
+# %% [markdown]
+# # 2×2 Matrix: combined + Paper LSTM + SDV
+# ## Install dependencies (Colab only)
+
+# %%
+# @title pip install (skip if already installed)
+import subprocess, sys
+for pkg in ["sdv", "datasets", "scikit-learn", "pandas", "numpy", "matplotlib", "seaborn"]:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", pkg])
+print("Done!")
+
+# %%
 """One-shot 2x2 matrix: combined subset + paper LSTM + SDV"""
 import warnings; warnings.filterwarnings("ignore")
 import time, os, json, numpy as np, pandas as pd
