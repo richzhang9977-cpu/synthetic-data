@@ -86,7 +86,7 @@ FEATURES = ["Radiation-Temp", "Wrist_Skin_Temperature", "GSR",
             "Ambient_Temperature", "Ambient_Humidity"]
 TARGET = "Label"
 SEQ_LEN = 10
-N = 100000
+N = 250000
 
 ds = load_dataset("kopetri/AutoTherm", "indoor", streaming=True, split="train")
 
