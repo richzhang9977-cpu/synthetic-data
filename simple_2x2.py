@@ -215,14 +215,20 @@ try: meta.remove_primary_key()
 except: pass
 
 synth_data = {}
+n_syn_train = len(train_frames_list)  # match real training frame count
+n_syn_test = int(n_syn_train * 0.3)    # independent test set size
+
 for name, cls, ep in [("GaussianCopula", GaussianCopulaSynthesizer, 0),
                        ("CTGAN", CTGANSynthesizer, 300),
                        ("TVAE", TVAESynthesizer, 300)]:
     print(f"   {name}..."); t0 = time.time()
     s = cls(meta, epochs=ep, cuda=True, verbose=False) if ep > 0 else cls(meta)
-    s.fit(sdv_df); df_s = s.sample(num_rows=len(sdv_df))
-    synth_data[name] = df_s
-    print(f"   {name}: {df_s.shape} in {time.time()-t0:.1f}s")
+    s.fit(sdv_df)
+    # Generate TWO independent synthetic datasets
+    df_s_train = s.sample(num_rows=n_syn_train)  # for training
+    df_s_test = s.sample(num_rows=n_syn_test)     # for testing (independent)
+    synth_data[name] = {"train": df_s_train, "test": df_s_test}
+    print(f"   {name}: train={df_s_train.shape}, test={df_s_test.shape} in {time.time()-t0:.1f}s")
 
 # ============================================================
 # 6. 2x2 Matrix
@@ -230,25 +236,32 @@ for name, cls, ep in [("GaussianCopula", GaussianCopulaSynthesizer, 0),
 print("\n[5/6] 2x2 Matrix...")
 results = {"Real->Real": real_real}
 
-for syn_name, syn_df in synth_data.items():
+for syn_name, syn_dict in synth_data.items():
     print(f"\n   --- {syn_name} ---")
 
-    syn_X = syn_df[FEATURES].apply(pd.to_numeric, errors="coerce").fillna(0).values.astype(np.float32)
-    syn_y_raw = syn_df[TARGET].astype(str)
-    valid_mask = syn_y_raw.isin(le.classes_)
-    syn_X, syn_y_raw = syn_X[valid_mask], syn_y_raw[valid_mask]
-    syn_y = le.transform(syn_y_raw)
+    syn_df_train = syn_dict["train"]
+    syn_df_test = syn_dict["test"]
 
-    syn_X_scaled = scaler.transform(syn_X)
-    syn_seqs, syn_seqs_y = [], []
-    for i in range(0, len(syn_X_scaled) - SEQ_LEN + 1, SEQ_LEN // 2):
-        syn_seqs.append(syn_X_scaled[i:i+SEQ_LEN])
-        syn_seqs_y.append(syn_y[i+SEQ_LEN-1])
-    syn_seqs = np.array(syn_seqs); syn_seqs_y = np.array(syn_seqs_y)
+    # --- Build sequences from INDEPENDENT synthetic train set ---
+    def syn_to_seqs(df):
+        X = df[FEATURES].apply(pd.to_numeric, errors="coerce").fillna(0).values.astype(np.float32)
+        y_raw = df[TARGET].astype(str)
+        vmask = y_raw.isin(le.classes_)
+        X, y_raw = X[vmask], y_raw[vmask]
+        y = le.transform(y_raw)
+        X_scl = scaler.transform(X)
+        seqs_X, seqs_y = [], []
+        for i in range(0, len(X_scl) - SEQ_LEN + 1, SEQ_LEN // 2):
+            seqs_X.append(X_scl[i:i+SEQ_LEN])
+            seqs_y.append(y[i+SEQ_LEN-1])
+        return np.array(seqs_X), np.array(seqs_y)
 
-    n_syn_tr = max(1, int(len(syn_seqs) * 0.7))
-    X_s_tr = syn_seqs[:n_syn_tr]; y_s_tr = syn_seqs_y[:n_syn_tr]
-    X_s_te = syn_seqs[n_syn_tr:]; y_s_te = syn_seqs_y[n_syn_tr:]
+    X_s_tr, y_s_tr = syn_to_seqs(syn_df_train)   # independent train
+    X_s_te, y_s_te = syn_to_seqs(syn_df_test)     # independent test
+
+    if len(X_s_tr) == 0 or len(X_s_te) == 0:
+        print("     SKIP: too few sequences")
+        continue
 
     # Synth->Real
     print("     Synth->Real...")
