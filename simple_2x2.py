@@ -75,12 +75,33 @@ def train_lstm(model, X_tr, y_tr, X_val, y_val, epochs=15, quiet=False):
     model.eval(); return model
 
 def evaluate(model, X_te, y_te):
-    if len(X_te) == 0: return {"acc": 0.0, "f1": 0.0}
+    if len(X_te) == 0: return {"acc": 0.0, "f1": 0.0, "pred": np.array([]), "true": np.array([])}
     model.eval()
     with torch.no_grad():
         pred = model(torch.FloatTensor(X_te).to(DEVICE)).argmax(-1).cpu().numpy()
     return {"acc": accuracy_score(y_te, pred),
-            "f1": f1_score(y_te, pred, average="macro", zero_division=0)}
+            "f1": f1_score(y_te, pred, average="macro", zero_division=0),
+            "pred": pred, "true": y_te}
+
+# Paper's label mapping functions (from dataloaders/utils.py)
+def class7to3(v):
+    v = np.array(v, copy=True); v[v<=2]=0; v[v==3]=1; v[v>=4]=2; return v
+def class7to2(v):
+    v = np.array(v, copy=True); v[v<=1]=0; v[v>=2]=1; return v  # -3,-2→discomfort, -1~+3→comfort
+
+def compute_scale_results(results_dict):
+    """Add 3-class and 2-class results from 7-class predictions."""
+    from copy import deepcopy
+    out = deepcopy(results_dict)
+    for key, r in results_dict.items():
+        if len(r.get("pred", [])) == 0: continue
+        for scale, fn in [("3class", class7to3), ("2class", class7to2)]:
+            p = fn(r["pred"]); t = fn(r["true"])
+            out[f"{key}_{scale}"] = {
+                "acc": accuracy_score(t, p),
+                "f1": f1_score(t, p, average="macro", zero_division=0)
+            }
+    return out
 
 # ============================================================
 # 2. Load indoor dataset (tabular frames, no images, fast)
@@ -314,25 +335,43 @@ for syn_name, syn_dict in synth_data.items():
     print(f"     F1={results[f'{syn_name}->{syn_name}']['f1']:.4f} | Acc={results[f'{syn_name}->{syn_name}']['acc']:.4f}")
 
 # ============================================================
-# 7. Summary
+# 7. Summary (7-class, 3-class, 2-class)
 # ============================================================
 print("\n" + "=" * 60)
-print("[6/6] 2x2 MATRIX RESULTS")
+print("[6/6] MULTI-SCALE RESULTS (7-class -> 3-class -> 2-class)")
 print("=" * 60)
-print(f"\n{'':>30s} | {'Test on Real':>16s} | {'Test on Synthetic':>20s}")
-print(f"{'':>30s} | {'F1':>7s} {'Acc':>7s} | {'F1':>7s} {'Acc':>7s}")
-print("-" * 70)
 
+all_scale_results = compute_scale_results(results)
 syn_names = list(synth_data.keys())
-rr = results["Real->Real"]
-first_syn = syn_names[0]
-rs0 = results.get(f"Real->{first_syn}", {"f1":0,"acc":0})
-print(f"{'Train on Real':>30s} | {rr['f1']:7.4f} {rr['acc']:7.4f} | {rs0['f1']:7.4f} {rs0['acc']:7.4f}")
 
-for sn in syn_names:
-    sr = results.get(f"{sn}->Real", {"f1":0,"acc":0})
-    ss = results.get(f"{sn}->{sn}", {"f1":0,"acc":0})
-    print(f"{'Train on '+sn:>30s} | {sr['f1']:7.4f} {sr['acc']:7.4f} | {ss['f1']:7.4f} {ss['acc']:7.4f}")
+for scale_name, filename in [("", "simple_2x2_7class_results.csv"),
+                               ("_3class", "simple_2x2_3class_results.csv"),
+                               ("_2class", "simple_2x2_2class_results.csv")]:
+    label = scale_name.replace("_","") if scale_name else "7-class"
+    print(f"\n--- {label} ---")
+    print(f"{'':>30s} | {'Test on Real':>16s} | {'Test on Synthetic':>20s}")
+    print(f"{'':>30s} | {'F1':>7s} {'Acc':>7s} | {'F1':>7s} {'Acc':>7s}")
+    print("-" * 70)
 
-pd.DataFrame(results).T.to_csv("simple_2x2_results.csv")
+    rr = all_scale_results.get(f"Real->Real{scale_name}", {"f1":0,"acc":0})
+    first_syn = syn_names[0]
+    rs0 = all_scale_results.get(f"Real->{first_syn}{scale_name}", {"f1":0,"acc":0})
+    print(f"{'Train on Real':>30s} | {rr['f1']:7.4f} {rr['acc']:7.4f} | {rs0['f1']:7.4f} {rs0['acc']:7.4f}")
+
+    for sn in syn_names:
+        sr = all_scale_results.get(f"{sn}->Real{scale_name}", {"f1":0,"acc":0})
+        ss = all_scale_results.get(f"{sn}->{sn}{scale_name}", {"f1":0,"acc":0})
+        print(f"{'Train on '+sn:>30s} | {sr['f1']:7.4f} {sr['acc']:7.4f} | {ss['f1']:7.4f} {ss['acc']:7.4f}")
+
+    # Save to CSV
+    rows = []
+    for key, r in all_scale_results.items():
+        if key.endswith(scale_name) and scale_name:
+            base_key = key[:-len(scale_name)]
+            rows.append({"Experiment": base_key, "F1": r["f1"], "Acc": r["acc"]})
+        elif not scale_name:
+            rows.append({"Experiment": key, "F1": r["f1"], "Acc": r["acc"]})
+    pd.DataFrame(rows).to_csv(filename, index=False)
+
 print("\nDONE")
+print("Saved: simple_2x2_7class_results.csv, simple_2x2_3class_results.csv, simple_2x2_2class_results.csv")
