@@ -1,1 +1,4 @@
 dataset/
+llm_synthetic/great_checkpoints/
+llm_synthetic/rtf_checkpoints/
+dataset/
