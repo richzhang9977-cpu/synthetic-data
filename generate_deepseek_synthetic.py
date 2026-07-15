@@ -15,74 +15,98 @@ print("=" * 60)
 FEATURES = ["Radiation-Temp", "Wrist_Skin_Temperature", "GSR",
             "Ambient_Temperature", "Ambient_Humidity"]
 TARGET = "Label"
-N_GEN = 5000
+N_GEN = 14000  # top up existing 36K to 50K
+N_PER_BATCH = 200
+N_SAMPLE = 300
 
 # Load real data for statistics
-print("\nLoading real data for prompt stats...")
+print("\nLoading real data for balanced few-shot sampling...")
 ds = load_from_disk("F:/synthetic/dataset/indoor/train")
-rows = [ds[i] for i in range(min(5000, len(ds)))]
-real = pd.DataFrame([{f: r[f] for f in FEATURES + [TARGET]} for r in rows])
-real[TARGET] = real[TARGET].astype(int)
 
-# Build prompt
-stats = []
-for f in FEATURES:
-    vals = pd.to_numeric(real[f], errors="coerce").dropna()
-    stats.append(
-        f"  {f}: min={vals.min():.2f}, max={vals.max():.2f}, "
-        f"mean={vals.mean():.2f}, std={vals.std():.2f}"
-    )
-label_dist = real[TARGET].value_counts().sort_index().to_dict()
+# Balanced sample: 100 rows per label × 7 labels = 700 rows
+from collections import defaultdict
+label_bins = defaultdict(list)
+ALL_LABELS = set(range(-3, 4))
+for i in range(len(ds)):
+    r = ds[i]
+    lbl = int(r[TARGET])
+    if lbl in ALL_LABELS and len(label_bins[lbl]) < 100:
+        label_bins[lbl].append(r)
+    if len(label_bins) == 7 and all(len(v) >= 100 for v in label_bins.values()):
+        break
 
-prompt = f"""Generate 50 synthetic data rows for thermal comfort prediction as JSON array.
+found_labels = sorted(label_bins.keys())
+print(f"   Found {len(found_labels)}/7 labels: {found_labels}")
+if len(found_labels) < 7:
+    print(f"   WARNING: Only {len(found_labels)} labels in dataset. Using all available.")
+balanced_rows = [r for v in label_bins.values() for r in v]
+real_sample = pd.DataFrame([{f: r[f] for f in FEATURES + [TARGET]} for r in balanced_rows])
+real_sample[TARGET] = real_sample[TARGET].astype(int)
+print(f"   Sampled {len(real_sample)} rows, labels: {dict(sorted(real_sample[TARGET].value_counts().to_dict().items()))}")
 
-Features (5 sensors):
-{chr(10).join(stats)}
+# Per-batch sampling: different rows each time for diversity
+BATCH_SIZE = N_GEN // N_PER_BATCH
+print(f"   {BATCH_SIZE} batches × {N_PER_BATCH} rows/batch = {N_GEN} total rows")
 
-Label (thermal sensation): -3=very cold, -2=cold, -1=slightly cool, 0=neutral, 1=slightly warm, 2=warm, 3=very hot
-Real label distribution: {label_dist}
+prompt_template = """You are generating synthetic thermal comfort data. Below are {n_sample} REAL data rows (CSV format).
+Study the patterns between features and labels. Then generate {n_gen} NEW diverse rows as a JSON array.
 
-Rules:
-- High ambient_temp + high radiation → positive label
-- Low wrist_skin_temp + low ambient_temp → negative label
-- Feature values must be within the ranges above
-- Label distribution should roughly match the real distribution
+--- REAL DATA ---
+{sample_data}
+--- END REAL DATA ---
 
-Output ONLY a JSON array. Each object: {{"Radiation-Temp": float, "Wrist_Skin_Temperature": float, "GSR": float, "Ambient_Temperature": float, "Ambient_Humidity": float, "Label": int}}"""
+Columns:
+- Radiation-Temp (C), Wrist_Skin_Temperature (C), GSR (uS), Ambient_Temperature (C), Ambient_Humidity (%)
+- Label: thermal comfort (-3=cold, -2=cool, -1=slightly cool, 0=neutral, 1=slightly warm, 2=warm, 3=hot)
 
-print(f"Prompt: {len(prompt)} chars")
-print(f"Generating {N_GEN} rows in batches of 50 via DeepSeek API...")
+Key relationships: Higher ambient_temp + radiation -> warmer label. Lower wrist_temp -> colder label.
+GSR rises with discomfort. Humidity amplifies thermal sensation.
+
+Generate {n_gen} diverse rows across MULTIPLE comfort levels. NOT exact copies.
+Output ONLY a JSON array. Format: {{"Radiation-Temp": float, ..., "Label": int}}"""
+
+print(f"Generating {N_GEN} rows in {BATCH_SIZE} batches...")
+print(f"  {N_SAMPLE} examples/prompt × {N_PER_BATCH} rows/batch")
 
 client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 all_rows = []
+rng = np.random.RandomState(42)
 
-for batch in range(N_GEN // 50):
+for batch in range(BATCH_SIZE):
+    # Random sample different rows each batch for diversity
+    sample = real_sample.sample(n=N_SAMPLE, replace=True, random_state=batch)
+    csv_str = sample.to_csv(index=False)
+    prompt = prompt_template.format(n_sample=len(sample), n_gen=N_PER_BATCH, sample_data=csv_str)
+
     t0 = time.time()
     try:
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.8,
-            max_tokens=4000
+            max_tokens=16000
         )
         text = response.choices[0].message.content
         match = re.search(r"\[.*\]", text, re.DOTALL)
         if match:
             rows = json.loads(match.group())
             all_rows.extend(rows)
-            print(f"  Batch {batch+1}: {len(rows)} rows, {time.time()-t0:.0f}s, total={len(all_rows)}")
+            print(f"  Batch {batch+1}/{BATCH_SIZE}: {len(rows)} rows, {time.time()-t0:.0f}s, total={len(all_rows)}")
         else:
-            print(f"  Batch {batch+1}: no JSON found, text={text[:100]}...")
+            print(f"  Batch {batch+1}: no JSON found")
     except Exception as e:
         print(f"  Batch {batch+1}: ERROR - {e}")
         time.sleep(5)
+    time.sleep(0.3)
 
-    time.sleep(0.5)  # rate limit
-
-# Save
+# Save (append to existing if present)
 os.makedirs("F:/synthetic/llm_synthetic", exist_ok=True)
 df = pd.DataFrame(all_rows)
-df.to_csv("F:/synthetic/llm_synthetic/deepseek_train.csv", index=False)
+path = "F:/synthetic/llm_synthetic/deepseek_train.csv"
+if os.path.exists(path) and len(df) < N_GEN:
+    existing = pd.read_csv(path)
+    df = pd.concat([existing, df], ignore_index=True)
+df.to_csv(path, index=False)
 print(f"\nSaved: {len(df)} rows to llm_synthetic/deepseek_train.csv")
 if TARGET in df.columns:
     print(f"Label dist: {dict(sorted(df[TARGET].astype(int).value_counts().sort_index().items()))}")
