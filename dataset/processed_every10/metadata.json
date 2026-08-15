@@ -1,0 +1,56 @@
+{
+  "raw_step": 10,
+  "sequence_length": 30,
+  "sequence_stride": 30,
+  "fixed_label_only": true,
+  "numeric_frame_sort": true,
+  "cross_session_windows": false,
+  "features": [
+    "Wrist_Skin_Temperature",
+    "GSR",
+    "Ambient_Temperature",
+    "Ambient_Humidity"
+  ],
+  "splits": {
+    "train": {
+      "sessions": 16,
+      "sampled_rows": 156679,
+      "sequences": 4949,
+      "sequence_label_counts": {
+        "-3": 225,
+        "-2": 423,
+        "-1": 1105,
+        "0": 1093,
+        "1": 598,
+        "2": 807,
+        "3": 698
+      },
+      "physical_span": {
+        "median_seconds": 10.668506,
+        "mean_seconds": 10.663831479692867,
+        "p05_seconds": 8.3244968,
+        "p95_seconds": 13.073633799999998
+      }
+    },
+    "test": {
+      "sessions": 2,
+      "sampled_rows": 19484,
+      "sequences": 590,
+      "sequence_label_counts": {
+        "-3": 3,
+        "-2": 75,
+        "-1": 130,
+        "0": 150,
+        "1": 94,
+        "2": 124,
+        "3": 14
+      },
+      "physical_span": {
+        "median_seconds": 10.64324,
+        "mean_seconds": 10.659817544067797,
+        "p05_seconds": 8.1031134,
+        "p95_seconds": 13.126183399999999
+      }
+    }
+  }
+}

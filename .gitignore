@@ -1,4 +1,75 @@
-dataset/
+# -----------------------------------------------------------------------------
+# Local data
+# Keep only the small preprocessing metadata file eligible for version control.
+# -----------------------------------------------------------------------------
+dataset/*
+!dataset/processed_every10/
+dataset/processed_every10/*
+!dataset/processed_every10/metadata.json
+
+# -----------------------------------------------------------------------------
+# Python, notebooks, tests, and editor caches
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# -----------------------------------------------------------------------------
+# Virtual environments and local secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+*.key
+*.pem
+
+# -----------------------------------------------------------------------------
+# Temporary files and logs
+# -----------------------------------------------------------------------------
+tmp/
+*.log
+*.err
+*.err.log
+*.tmp
+*.temp
+Thumbs.db
+.DS_Store
+
+# -----------------------------------------------------------------------------
+# Generated synthetic datasets
+# Publish selected datasets through a release/data archive instead of Git history.
+# -----------------------------------------------------------------------------
+llm_synthetic/**/*.csv
+
+# -----------------------------------------------------------------------------
+# Model weights and training checkpoints
+# -----------------------------------------------------------------------------
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.pickle
+*.safetensors
+*.bin
+**/checkpoint-*/
+**/checkpoints/
 llm_synthetic/great_checkpoints/
 llm_synthetic/rtf_checkpoints/
-dataset/
+llm_synthetic/qwen_checkpoints/
+results/**/checkpoints/
+
+# -----------------------------------------------------------------------------
+# Local run state
+# -----------------------------------------------------------------------------
+wandb/
+runs/
+lightning_logs/

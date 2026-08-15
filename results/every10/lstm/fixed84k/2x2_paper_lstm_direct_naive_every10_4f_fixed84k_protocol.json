@@ -1,0 +1,66 @@
+{
+  "official_code_commit": "0ad0df29d12b5de0333f7767a964908be382eee5",
+  "features": [
+    "Wrist_Skin_Temperature",
+    "GSR",
+    "Ambient_Temperature",
+    "Ambient_Humidity"
+  ],
+  "labels": [
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3
+  ],
+  "sequence_length": 30,
+  "raw_downsample": 10,
+  "physical_span_seconds_train": {
+    "mean": 10.674792070588424,
+    "median": 10.684767961502075,
+    "p05": 8.311773777008057,
+    "p95": 13.0680766582489
+  },
+  "physical_span_seconds_test": {
+    "mean": 10.725343096345851,
+    "median": 10.787353992462158,
+    "p05": 8.19713705778122,
+    "p95": 13.173030257225037
+  },
+  "window_stride": 1,
+  "hidden_size": 64,
+  "lstm_layers": 2,
+  "dropout": 0.5,
+  "learning_rate": 1e-05,
+  "learning_rate_decay_per_step": 0.9999999,
+  "batch_size": 16,
+  "max_epochs": null,
+  "loss": "MSE on cumulative ordinal targets",
+  "optimizer": "Adam",
+  "seeds": [
+    41,
+    42,
+    43,
+    44,
+    45
+  ],
+  "normalization_fixed_bounds": {
+    "Ambient_Temperature": [
+      15.0,
+      40.0
+    ],
+    "Ambient_Humidity": [
+      0.0,
+      100.0
+    ]
+  },
+  "normalization_train_fitted": [
+    "Wrist_Skin_Temperature",
+    "GSR"
+  ],
+  "training_budget_mode": "fixed_optimizer_updates",
+  "max_optimizer_updates": 84000,
+  "checkpoint_selection": "validation_accuracy"
+}

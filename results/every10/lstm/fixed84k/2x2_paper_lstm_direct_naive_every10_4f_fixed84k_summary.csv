@@ -1,0 +1,3 @@
+method,direction,f1,f1,acc,acc
+,,mean,std,mean,std
+direct_naive_every10_4f_fixed84k,direct_naive_every10_4f_fixed84k->Real,0.3347561773731714,0.011604716350319687,0.408287861628745,0.014372274756724956

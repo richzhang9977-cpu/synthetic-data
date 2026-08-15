@@ -1,0 +1,6 @@
+method,seed,direction,f1,acc
+direct_naive_every10_4f_fixed84k,41,direct_naive_every10_4f_fixed84k->Real,0.343532895922179,0.41912900236796047
+direct_naive_every10_4f_fixed84k,42,direct_naive_every10_4f_fixed84k->Real,0.3310253286822151,0.40311953052609906
+direct_naive_every10_4f_fixed84k,43,direct_naive_every10_4f_fixed84k->Real,0.3179215673573646,0.38721301348707915
+direct_naive_every10_4f_fixed84k,44,direct_naive_every10_4f_fixed84k->Real,0.33376445806095184,0.4082672706681767
+direct_naive_every10_4f_fixed84k,45,direct_naive_every10_4f_fixed84k->Real,0.34753663684314634,0.42371049109440956

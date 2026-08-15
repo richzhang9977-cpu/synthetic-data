@@ -1,0 +1,25 @@
+{
+  "method": "TVAE",
+  "features": [
+    "Wrist_Skin_Temperature",
+    "GSR",
+    "Ambient_Temperature",
+    "Ambient_Humidity"
+  ],
+  "training_sequences": 4949,
+  "generated_sequences": 1680,
+  "generated_rows": 50400,
+  "generated_label_counts": {
+    "-3": 28,
+    "-2": 114,
+    "-1": 465,
+    "0": 467,
+    "1": 196,
+    "2": 264,
+    "3": 146
+  },
+  "sequence_length": 30,
+  "epochs": 300,
+  "elapsed_seconds": 335.6387004852295,
+  "shared_preprocessing": "four paper-best features; every 10 raw observations; fixed-label 30-step session windows"
+}

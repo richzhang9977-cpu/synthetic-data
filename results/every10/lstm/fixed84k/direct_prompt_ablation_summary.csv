@@ -1,0 +1,6 @@
+method,sequences,rows,synth_to_real_f1_mean,synth_to_real_f1_std,accuracy_mean,exact_duplicate_rate,real_train_exact_match_rate,total_tokens,tokens_per_sequence
+CTGAN,1680,50400,0.234191,0.032851,0.372758,,,,
+Direct-Controlled,1680,50400,0.285890,0.016954,0.348111,0.114881,0.119643,1699325,1011.503
+TVAE,1680,50400,0.330561,0.029738,0.526727,,,,
+Direct-Naive,1680,50400,0.334756,0.011605,0.408288,0.045238,0.070238,1508683,898.026
+v5 Sparse Events,1680,50400,0.351313,0.013381,0.480840,0.019643,0.042262,,

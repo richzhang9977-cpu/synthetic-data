@@ -1,0 +1,25 @@
+{
+  "method": "CTGAN",
+  "features": [
+    "Wrist_Skin_Temperature",
+    "GSR",
+    "Ambient_Temperature",
+    "Ambient_Humidity"
+  ],
+  "training_sequences": 4949,
+  "generated_sequences": 1680,
+  "generated_rows": 50400,
+  "generated_label_counts": {
+    "-3": 200,
+    "-2": 224,
+    "-1": 274,
+    "0": 265,
+    "1": 240,
+    "2": 233,
+    "3": 244
+  },
+  "sequence_length": 30,
+  "epochs": 300,
+  "elapsed_seconds": 1005.4961316585541,
+  "shared_preprocessing": "four paper-best features; every 10 raw observations; fixed-label 30-step session windows"
+}
