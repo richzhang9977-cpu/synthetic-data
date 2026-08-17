@@ -17,8 +17,8 @@ INPUTS = {
     "DirectControlledCopyBug": ROOT / "llm_synthetic/every10/direct_controlled.csv",
     "DirectControlled": ROOT
     / "llm_synthetic/every10/direct_controlled_nocopy.csv",
-    "DeepSeekV5B10": ROOT
-    / "llm_synthetic/every10/approach_a_v5_events_b10.csv",
+    "SparseControlled": ROOT
+    / "llm_synthetic/every10/sparse_controlled_events_b10.csv",
 }
 METRICS = {
     "DirectNaive": ROOT / "results/every10/direct_naive_generation_metrics.json",

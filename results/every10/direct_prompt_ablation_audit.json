@@ -182,8 +182,8 @@
       "sequences_matching_real_train": 201,
       "unique_sequences_matching_real_train": 115
     },
-    "DeepSeekV5B10": {
-      "path": "F:\\synthetic\\llm_synthetic\\every10\\approach_a_v5_events_b10.csv",
+    "SparseControlled": {
+      "path": "F:\\synthetic\\llm_synthetic\\every10\\sparse_controlled_events_b10.csv",
       "rows": 50400,
       "sequences": 1680,
       "sequence_lengths": [

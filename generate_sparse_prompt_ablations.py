@@ -49,10 +49,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--prompt-mode",
-        choices=("v5-controlled", "sparse-naive"),
-        default="v5-controlled",
+        choices=("sparse-controlled", "sparse-naive"),
+        default="sparse-controlled",
         help=(
-            "v5-controlled includes session dynamics and global statistics; "
+            "sparse-controlled includes session dynamics and global statistics; "
             "sparse-naive uses only event-form same-session examples."
         ),
     )
@@ -65,15 +65,15 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if args.output is None:
         filename = (
-            "approach_a_v5_events_b10.csv"
-            if args.prompt_mode == "v5-controlled"
+            "sparse_controlled_events_b10.csv"
+            if args.prompt_mode == "sparse-controlled"
             else "sparse_naive_events_b10.csv"
         )
         args.output = f"F:/synthetic/llm_synthetic/every10/{filename}"
     if args.preview is None:
         filename = (
-            "approach_a_v5_b10_prompt_preview.txt"
-            if args.prompt_mode == "v5-controlled"
+            "sparse_controlled_b10_prompt_preview.txt"
+            if args.prompt_mode == "sparse-controlled"
             else "sparse_naive_b10_prompt_preview.txt"
         )
         args.preview = f"F:/synthetic/results/every10/{filename}"
@@ -236,7 +236,7 @@ Training-only examples:
 {json.dumps(examples, ensure_ascii=False, indent=2)}
 """
 
-    if prompt_mode != "v5-controlled":
+    if prompt_mode != "sparse-controlled":
         raise ValueError(f"Unsupported prompt mode: {prompt_mode}")
 
     return common + f"""

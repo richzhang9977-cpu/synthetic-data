@@ -13,8 +13,8 @@ INPUTS = {
     "DenseControlled": ROOT
     / "llm_synthetic/every10/direct_controlled_nocopy.csv",
     "SparseNaive": ROOT / "llm_synthetic/every10/sparse_naive_events_b10.csv",
-    "SparseControlledV5": ROOT
-    / "llm_synthetic/every10/approach_a_v5_events_b10.csv",
+    "SparseControlled": ROOT
+    / "llm_synthetic/every10/sparse_controlled_events_b10.csv",
 }
 OUTPUT = ROOT / "results/every10/sparse_prompt_2x2_audit.json"
 

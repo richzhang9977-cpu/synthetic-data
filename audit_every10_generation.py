@@ -12,8 +12,8 @@ from temporal_utils import TARGET
 
 ROOT = Path("F:/synthetic")
 EXPLICIT = {
-    "DeepSeekV5B10": ROOT
-    / "llm_synthetic/every10/approach_a_v5_events_b10.csv",
+    "SparseControlledB10": ROOT
+    / "llm_synthetic/every10/sparse_controlled_events_b10.csv",
     "SparseNaiveB10": ROOT
     / "llm_synthetic/every10/sparse_naive_events_b10.csv",
     "TVAE": ROOT / "llm_synthetic/every10/sdv/tvae/synthetic.csv",

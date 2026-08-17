@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from generate_synthetic_a_v5_events import empirical_stats, session_dynamics_stats
+from generate_sparse_prompt_ablations import empirical_stats, session_dynamics_stats
 from temporal_utils import PAPER_BEST_FEATURES as FEATURES
 from temporal_utils import TARGET, proportional_label_counts
 

@@ -1,5 +1,5 @@
 {
-  "41:deepseekv5_b10_every10_4f_fixed84k->Real": [
+  "41:sparse_controlled_b10_every10_4f_fixed84k->Real": [
     [
       0,
       0,
@@ -64,7 +64,7 @@
       433
     ]
   ],
-  "42:deepseekv5_b10_every10_4f_fixed84k->Real": [
+  "42:sparse_controlled_b10_every10_4f_fixed84k->Real": [
     [
       0,
       0,
@@ -129,7 +129,7 @@
       442
     ]
   ],
-  "43:deepseekv5_b10_every10_4f_fixed84k->Real": [
+  "43:sparse_controlled_b10_every10_4f_fixed84k->Real": [
     [
       0,
       116,
@@ -194,7 +194,7 @@
       276
     ]
   ],
-  "44:deepseekv5_b10_every10_4f_fixed84k->Real": [
+  "44:sparse_controlled_b10_every10_4f_fixed84k->Real": [
     [
       0,
       0,
@@ -259,7 +259,7 @@
       470
     ]
   ],
-  "45:deepseekv5_b10_every10_4f_fixed84k->Real": [
+  "45:sparse_controlled_b10_every10_4f_fixed84k->Real": [
     [
       0,
       0,

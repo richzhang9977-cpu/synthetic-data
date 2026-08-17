@@ -182,8 +182,8 @@
       "sequences_matching_real_train": 25,
       "sequence_match_real_train_rate": 0.01488095238095238
     },
-    "SparseControlledV5": {
-      "path": "F:\\synthetic\\llm_synthetic\\every10\\approach_a_v5_events_b10.csv",
+    "SparseControlled": {
+      "path": "F:\\synthetic\\llm_synthetic\\every10\\sparse_controlled_events_b10.csv",
       "rows": 50400,
       "sequences": 1680,
       "sequence_lengths": [

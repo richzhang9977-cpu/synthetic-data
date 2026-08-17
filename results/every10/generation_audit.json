@@ -12,8 +12,8 @@
     "real_training_rows": 148470
   },
   "methods": {
-    "DeepSeekV5B10": {
-      "path": "F:\\synthetic\\llm_synthetic\\every10\\approach_a_v5_events_b10.csv",
+    "SparseControlledB10": {
+      "path": "F:\\synthetic\\llm_synthetic\\every10\\sparse_controlled_events_b10.csv",
       "rows": 50400,
       "sequences": 1680,
       "sequence_lengths": [

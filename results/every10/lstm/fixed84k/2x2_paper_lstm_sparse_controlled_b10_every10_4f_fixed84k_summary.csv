@@ -1,0 +1,3 @@
+method,direction,f1,f1,acc,acc
+,,mean,std,mean,std
+sparse_controlled_b10_every10_4f_fixed84k,sparse_controlled_b10_every10_4f_fixed84k->Real,0.38244666749420164,0.03598794311391565,0.5382888911767735,0.02630911733548479
