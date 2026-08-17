@@ -1,5 +1,3 @@
-"""Audit the two dense-output prompt ablations against real data and v5."""
-
 from __future__ import annotations
 
 import json
@@ -19,7 +17,8 @@ INPUTS = {
     "DirectControlledCopyBug": ROOT / "llm_synthetic/every10/direct_controlled.csv",
     "DirectControlled": ROOT
     / "llm_synthetic/every10/direct_controlled_nocopy.csv",
-    "DeepSeekV5": ROOT / "llm_synthetic/every10/approach_a_v5_events.csv",
+    "DeepSeekV5B10": ROOT
+    / "llm_synthetic/every10/approach_a_v5_events_b10.csv",
 }
 METRICS = {
     "DirectNaive": ROOT / "results/every10/direct_naive_generation_metrics.json",

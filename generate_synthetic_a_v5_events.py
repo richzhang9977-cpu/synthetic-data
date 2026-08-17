@@ -1,9 +1,3 @@
-"""Approach A v5 on shared every-10, 30-step session sequences.
-
-By default this script writes a prompt preview and makes no network calls. Pass
---execute only after setting a freshly rotated DEEPSEEK_API_KEY.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -37,11 +31,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output",
-        default="F:/synthetic/llm_synthetic/every10/approach_a_v5_events.csv",
+        help="Output CSV; defaults to a mode-specific every10 path.",
     )
     parser.add_argument(
         "--preview",
-        default="F:/synthetic/results/every10/approach_a_v5_prompt_preview.txt",
+        help="Prompt preview; defaults to a mode-specific every10 path.",
     )
     parser.add_argument("--sequence-length", type=int, default=30)
     parser.add_argument("--total-sequences", type=int, default=1_680)
@@ -50,16 +44,40 @@ def parse_args() -> argparse.Namespace:
         type=int,
         help="Optional balanced-generation override for an ablation run.",
     )
-    parser.add_argument("--batch-size", type=int, default=5)
+    parser.add_argument("--batch-size", type=int, default=10)
     parser.add_argument("--exemplars", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--prompt-mode",
+        choices=("v5-controlled", "sparse-naive"),
+        default="v5-controlled",
+        help=(
+            "v5-controlled includes session dynamics and global statistics; "
+            "sparse-naive uses only event-form same-session examples."
+        ),
+    )
     parser.add_argument(
         "--resume",
         action="store_true",
         help="Resume from --output and top up every label to --sequences-per-label.",
     )
     parser.add_argument("--execute", action="store_true")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.output is None:
+        filename = (
+            "approach_a_v5_events_b10.csv"
+            if args.prompt_mode == "v5-controlled"
+            else "sparse_naive_events_b10.csv"
+        )
+        args.output = f"F:/synthetic/llm_synthetic/every10/{filename}"
+    if args.preview is None:
+        filename = (
+            "approach_a_v5_b10_prompt_preview.txt"
+            if args.prompt_mode == "v5-controlled"
+            else "sparse_naive_b10_prompt_preview.txt"
+        )
+        args.preview = f"F:/synthetic/results/every10/{filename}"
+    return args
 
 
 def empirical_stats(real: pd.DataFrame) -> tuple[dict, dict, dict]:
@@ -167,6 +185,7 @@ def sample_same_session_examples(
 
 
 def make_prompt(
+    prompt_mode: str,
     label: int,
     count: int,
     examples: list[dict],
@@ -184,7 +203,7 @@ def make_prompt(
         SHORT[feature]: global_stats[SHORT[feature]]["max_abs_delta"]
         for feature in FEATURES
     }
-    return f"""Generate {count} synthetic thermal-comfort sensor sequences as a JSON array.
+    common = f"""Generate {count} synthetic thermal-comfort sensor sequences as a JSON array.
 
 Time scale and semantics:
 - Each sequence contains {length} sampled observations.
@@ -193,7 +212,34 @@ Time scale and semantics:
 - Every sequence has fixed label={label}; do not generate label transitions.
 - Sensor readings are piecewise constant. Updates are sparse events, not smooth interpolation.
 - Generate a correlated four-feature base state, then only the updates.
+"""
 
+    schema = f"""Schema for each array element:
+{{"label": {label}, "base": {{"wrist": number, "gsr": number,
+"ambient": number, "humidity": number}}, "updates": [
+{{"step": integer from 1 to {length - 1}, "deltas": {{"gsr": number}}}}
+]}}"""
+
+    if prompt_mode == "sparse-naive":
+        return common + f"""
+Rules:
+- Preserve realistic dependence among base wrist, gsr, ambient, and humidity.
+- Return JSON only; no Markdown or explanation.
+
+{schema}
+
+Use only the following same-participant-session, same-label training examples
+to infer the value scale, cross-feature relationships, event frequency, and
+event magnitudes.
+
+Training-only examples:
+{json.dumps(examples, ensure_ascii=False, indent=2)}
+"""
+
+    if prompt_mode != "v5-controlled":
+        raise ValueError(f"Unsupported prompt mode: {prompt_mode}")
+
+    return common + f"""
 Current-session dynamics:
 {json.dumps(session_stats, ensure_ascii=False, indent=2)}
 
@@ -211,11 +257,7 @@ Rules:
 - Preserve realistic dependence among base wrist, gsr, ambient, and humidity.
 - Return JSON only; no Markdown or explanation.
 
-Schema for each array element:
-{{"label": {label}, "base": {{"wrist": number, "gsr": number,
-"ambient": number, "humidity": number}}, "updates": [
-{{"step": integer from 1 to {length - 1}, "deltas": {{"gsr": number}}}}
-]}}
+{schema}
 
 Training-only examples:
 {json.dumps(examples, ensure_ascii=False, indent=2)}
@@ -329,6 +371,7 @@ def main() -> None:
         examples[0], args.exemplars, rng
     )
     preview_prompt = make_prompt(
+        args.prompt_mode,
         0,
         args.batch_size,
         preview_examples,
@@ -386,6 +429,7 @@ def main() -> None:
             )
             count = min(args.batch_size, target - generated)
             prompt = make_prompt(
+                args.prompt_mode,
                 label,
                 count,
                 chosen,

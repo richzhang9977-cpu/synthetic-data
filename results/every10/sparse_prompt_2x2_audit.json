@@ -44,7 +44,7 @@
         }
       }
     },
-    "DirectNaive": {
+    "DenseNaive": {
       "path": "F:\\synthetic\\llm_synthetic\\every10\\direct_naive.csv",
       "rows": 50400,
       "sequences": 1680,
@@ -88,55 +88,9 @@
         }
       },
       "sequences_matching_real_train": 118,
-      "unique_sequences_matching_real_train": 66
+      "sequence_match_real_train_rate": 0.07023809523809524
     },
-    "DirectControlledCopyBug": {
-      "path": "F:\\synthetic\\llm_synthetic\\every10\\direct_controlled.csv",
-      "rows": 50400,
-      "sequences": 1680,
-      "sequence_lengths": [
-        30
-      ],
-      "mixed_label_sequences": 0,
-      "missing_values": 0,
-      "non_finite_values": 0,
-      "label_counts": {
-        "-3": 76,
-        "-2": 144,
-        "-1": 375,
-        "0": 371,
-        "1": 203,
-        "2": 274,
-        "3": 237
-      },
-      "exact_duplicate_sequences": 328,
-      "exact_duplicate_sequence_rate": 0.19523809523809524,
-      "temporal": {
-        "Wrist_Skin_Temperature": {
-          "change_probability_per_step": 0.05821018062397373,
-          "median_nonzero_abs_delta": 0.020000000000003126,
-          "p95_nonzero_abs_delta": 0.060000000000002274
-        },
-        "GSR": {
-          "change_probability_per_step": 0.11046798029556651,
-          "median_nonzero_abs_delta": 0.003843299999999994,
-          "p95_nonzero_abs_delta": 0.10504999999999987
-        },
-        "Ambient_Temperature": {
-          "change_probability_per_step": 0.030685550082101807,
-          "median_nonzero_abs_delta": 0.10000000000000142,
-          "p95_nonzero_abs_delta": 0.1999999999999993
-        },
-        "Ambient_Humidity": {
-          "change_probability_per_step": 0.010385878489326766,
-          "median_nonzero_abs_delta": 1.0,
-          "p95_nonzero_abs_delta": 1.0
-        }
-      },
-      "sequences_matching_real_train": 679,
-      "unique_sequences_matching_real_train": 481
-    },
-    "DirectControlled": {
+    "DenseControlled": {
       "path": "F:\\synthetic\\llm_synthetic\\every10\\direct_controlled_nocopy.csv",
       "rows": 50400,
       "sequences": 1680,
@@ -180,9 +134,55 @@
         }
       },
       "sequences_matching_real_train": 201,
-      "unique_sequences_matching_real_train": 115
+      "sequence_match_real_train_rate": 0.11964285714285715
     },
-    "DeepSeekV5B10": {
+    "SparseNaive": {
+      "path": "F:\\synthetic\\llm_synthetic\\every10\\sparse_naive_events_b10.csv",
+      "rows": 50400,
+      "sequences": 1680,
+      "sequence_lengths": [
+        30
+      ],
+      "mixed_label_sequences": 0,
+      "missing_values": 0,
+      "non_finite_values": 0,
+      "label_counts": {
+        "-3": 76,
+        "-2": 144,
+        "-1": 375,
+        "0": 371,
+        "1": 203,
+        "2": 274,
+        "3": 237
+      },
+      "exact_duplicate_sequences": 94,
+      "exact_duplicate_sequence_rate": 0.055952380952380955,
+      "temporal": {
+        "Wrist_Skin_Temperature": {
+          "change_probability_per_step": 0.09903530377668308,
+          "median_nonzero_abs_delta": 0.020000000000003126,
+          "p95_nonzero_abs_delta": 0.03999999999999915
+        },
+        "GSR": {
+          "change_probability_per_step": 0.21354679802955664,
+          "median_nonzero_abs_delta": 0.003843299999999994,
+          "p95_nonzero_abs_delta": 0.10000000000000009
+        },
+        "Ambient_Temperature": {
+          "change_probability_per_step": 0.05814860426929393,
+          "median_nonzero_abs_delta": 0.10000000000000142,
+          "p95_nonzero_abs_delta": 0.10000000000000497
+        },
+        "Ambient_Humidity": {
+          "change_probability_per_step": 0.022167487684729065,
+          "median_nonzero_abs_delta": 1.0,
+          "p95_nonzero_abs_delta": 1.0
+        }
+      },
+      "sequences_matching_real_train": 25,
+      "sequence_match_real_train_rate": 0.01488095238095238
+    },
+    "SparseControlledV5": {
       "path": "F:\\synthetic\\llm_synthetic\\every10\\approach_a_v5_events_b10.csv",
       "rows": 50400,
       "sequences": 1680,
@@ -226,66 +226,7 @@
         }
       },
       "sequences_matching_real_train": 47,
-      "unique_sequences_matching_real_train": 38
-    }
-  },
-  "generation": {
-    "DirectNaive": {
-      "attempts": 181,
-      "returned_objects": 1706,
-      "accepted_sequences": 1680,
-      "object_acceptance_rate": 0.984759671746776,
-      "prompt_tokens": 521483,
-      "completion_tokens": 987200,
-      "total_tokens": 1508683,
-      "tokens_per_accepted_sequence": 898.0255952380952,
-      "elapsed_seconds": 4479.325896499999,
-      "rejections": {
-        "wrong_label": 0,
-        "wrong_shape": 0,
-        "non_finite": 0,
-        "out_of_bounds": 26,
-        "excessive_delta": 0,
-        "malformed": 0
-      }
-    },
-    "DirectControlledCopyBug": {
-      "attempts": 178,
-      "returned_objects": 1694,
-      "accepted_sequences": 1680,
-      "object_acceptance_rate": 0.9917355371900827,
-      "prompt_tokens": 591732,
-      "completion_tokens": 1081855,
-      "total_tokens": 1673587,
-      "tokens_per_accepted_sequence": 996.182738095238,
-      "elapsed_seconds": 4765.144962899998,
-      "rejections": {
-        "wrong_label": 0,
-        "wrong_shape": 3,
-        "non_finite": 0,
-        "out_of_bounds": 11,
-        "excessive_delta": 0,
-        "malformed": 0
-      }
-    },
-    "DirectControlled": {
-      "attempts": 175,
-      "returned_objects": 1690,
-      "accepted_sequences": 1680,
-      "object_acceptance_rate": 0.9940828402366864,
-      "prompt_tokens": 583267,
-      "completion_tokens": 1116058,
-      "total_tokens": 1699325,
-      "tokens_per_accepted_sequence": 1011.5029761904761,
-      "elapsed_seconds": 4738.700466600014,
-      "rejections": {
-        "wrong_label": 0,
-        "wrong_shape": 0,
-        "non_finite": 0,
-        "out_of_bounds": 10,
-        "excessive_delta": 0,
-        "malformed": 0
-      }
+      "sequence_match_real_train_rate": 0.027976190476190477
     }
   }
 }

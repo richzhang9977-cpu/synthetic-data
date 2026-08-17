@@ -1,0 +1,6 @@
+method,seed,direction,f1,acc
+sparse_naive_b10_every10_4f_fixed84k,41,sparse_naive_b10_every10_4f_fixed84k->Real,0.346780446678221,0.49516112426644704
+sparse_naive_b10_every10_4f_fixed84k,42,sparse_naive_b10_every10_4f_fixed84k->Real,0.3717389864919311,0.533357356120663
+sparse_naive_b10_every10_4f_fixed84k,43,sparse_naive_b10_every10_4f_fixed84k->Real,0.36254582277868586,0.5385565736641614
+sparse_naive_b10_every10_4f_fixed84k,44,sparse_naive_b10_every10_4f_fixed84k->Real,0.3303972425684754,0.5077216102131165
+sparse_naive_b10_every10_4f_fixed84k,45,sparse_naive_b10_every10_4f_fixed84k->Real,0.3993069731513838,0.5440131782147637

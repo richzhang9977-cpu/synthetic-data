@@ -1,13 +1,3 @@
-"""Paper-aligned 2x2 utility evaluation for AutoTherm synthetic data.
-
-The model and training target follow the authors' public implementation at
-commit 0ad0df29d12b5de0333f7767a964908be382eee5. Real windows are constructed
-inside numerically sorted sessions and sampled every 10 raw observations as
-requested. Actual physical spans are measured from timestamps and saved with
-the result instead of being inferred from an assumed frame rate.
-Inputs use the four-feature combination reported best in paper Section 7.7.
-"""
-
 from __future__ import annotations
 
 import argparse

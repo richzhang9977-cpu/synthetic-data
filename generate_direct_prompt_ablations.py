@@ -1,16 +1,3 @@
-"""Direct-output DeepSeek ablations on the shared every-10 protocol.
-
-The two modes deliberately use the same 30-step, four-feature output schema:
-
-* direct-naive: five same-session/same-label dense examples, with no empirical
-  dynamics statistics or hand-written temporal rules.
-* direct-controlled: the same examples plus the session dynamics and global
-  safety information used by Approach A v5.
-
-Both modes write evaluator-ready long-form CSV files.  Network calls are made
-only with --execute; otherwise prompt previews are produced.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -57,7 +44,7 @@ def parse_args() -> argparse.Namespace:
         type=int,
         help="Balanced small-run override; generates this many per label.",
     )
-    parser.add_argument("--batch-size", type=int, default=5)
+    parser.add_argument("--batch-size", type=int, default=10)
     parser.add_argument("--exemplars", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--temperature", type=float, default=0.3)

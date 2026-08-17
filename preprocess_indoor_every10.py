@@ -1,11 +1,3 @@
-"""Build the shared every-10, 30-step, session-safe experiment dataset.
-
-Raw records are numerically ordered inside each session before sampling.  The
-row files retain every tenth raw observation.  The sequence files contain
-non-overlapping, fixed-label 30-step windows and are the sole training source
-for every synthetic generator in the corrected comparison.
-"""
-
 from __future__ import annotations
 
 import argparse

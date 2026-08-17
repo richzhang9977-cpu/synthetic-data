@@ -12,8 +12,8 @@
     "real_training_rows": 148470
   },
   "methods": {
-    "DeepSeekV5": {
-      "path": "F:\\synthetic\\llm_synthetic\\every10\\approach_a_v5_events.csv",
+    "DeepSeekV5B10": {
+      "path": "F:\\synthetic\\llm_synthetic\\every10\\approach_a_v5_events_b10.csv",
       "rows": 50400,
       "sequences": 1680,
       "sequence_lengths": [
@@ -32,8 +32,8 @@
         "2": 274,
         "3": 237
       },
-      "exact_duplicate_sequences": 33,
-      "exact_duplicate_sequence_rate": 0.019642857142857142,
+      "exact_duplicate_sequences": 91,
+      "exact_duplicate_sequence_rate": 0.05416666666666667,
       "values_below_real_train_min": {
         "Wrist_Skin_Temperature": 0,
         "GSR": 0,
@@ -48,15 +48,68 @@
       },
       "feature_ranges": {
         "Wrist_Skin_Temperature": {
-          "min": 28.270000000000003,
+          "min": 28.48,
           "max": 36.77
         },
         "GSR": {
           "min": 0.0038432999999999,
-          "max": 5.875543
+          "max": 5.83372
         },
         "Ambient_Temperature": {
           "min": 18.0,
+          "max": 36.6
+        },
+        "Ambient_Humidity": {
+          "min": 13.0,
+          "max": 52.0
+        }
+      }
+    },
+    "SparseNaiveB10": {
+      "path": "F:\\synthetic\\llm_synthetic\\every10\\sparse_naive_events_b10.csv",
+      "rows": 50400,
+      "sequences": 1680,
+      "sequence_lengths": [
+        30
+      ],
+      "invalid_step_sequences": 0,
+      "mixed_label_sequences": 0,
+      "missing_values": 0,
+      "non_finite_values": 0,
+      "label_sequence_counts": {
+        "-3": 76,
+        "-2": 144,
+        "-1": 375,
+        "0": 371,
+        "1": 203,
+        "2": 274,
+        "3": 237
+      },
+      "exact_duplicate_sequences": 94,
+      "exact_duplicate_sequence_rate": 0.055952380952380955,
+      "values_below_real_train_min": {
+        "Wrist_Skin_Temperature": 0,
+        "GSR": 0,
+        "Ambient_Temperature": 0,
+        "Ambient_Humidity": 0
+      },
+      "values_above_real_train_max": {
+        "Wrist_Skin_Temperature": 0,
+        "GSR": 0,
+        "Ambient_Temperature": 0,
+        "Ambient_Humidity": 0
+      },
+      "feature_ranges": {
+        "Wrist_Skin_Temperature": {
+          "min": 28.3,
+          "max": 36.77
+        },
+        "GSR": {
+          "min": 0.0038433,
+          "max": 5.83372
+        },
+        "Ambient_Temperature": {
+          "min": 17.9,
           "max": 36.7
         },
         "Ambient_Humidity": {
@@ -168,94 +221,6 @@
         "Ambient_Humidity": {
           "min": 12.0,
           "max": 55.0
-        }
-      }
-    },
-    "TabGPT": {
-      "path": "F:\\synthetic\\llm_synthetic\\every10\\tabgpt\\synthetic.csv",
-      "rows": 50400,
-      "sequences": 1680,
-      "sequence_lengths": [
-        30
-      ],
-      "invalid_step_sequences": 0,
-      "mixed_label_sequences": 0,
-      "missing_values": 0,
-      "non_finite_values": 0,
-      "label_sequence_counts": {
-        "-3": 76,
-        "-2": 144,
-        "-1": 375,
-        "0": 371,
-        "1": 203,
-        "2": 274,
-        "3": 237
-      },
-      "exact_duplicate_sequences": 15,
-      "exact_duplicate_sequence_rate": 0.008928571428571428,
-      "values_below_real_train_min": {
-        "Wrist_Skin_Temperature": 0,
-        "GSR": 0,
-        "Ambient_Temperature": 0,
-        "Ambient_Humidity": 0
-      },
-      "values_above_real_train_max": {
-        "Wrist_Skin_Temperature": 0,
-        "GSR": 0,
-        "Ambient_Temperature": 0,
-        "Ambient_Humidity": 0
-      },
-      "feature_ranges": {
-        "Wrist_Skin_Temperature": {
-          "min": 28.64,
-          "max": 36.7
-        },
-        "GSR": {
-          "min": 0.0051243999999999,
-          "max": 5.66578
-        },
-        "Ambient_Temperature": {
-          "min": 18.6,
-          "max": 36.2
-        },
-        "Ambient_Humidity": {
-          "min": 14.0,
-          "max": 52.0
-        }
-      }
-    },
-    "BaseGPT": {
-      "path": "F:\\synthetic\\llm_synthetic\\every10\\basegpt\\base_states.csv",
-      "role": "TabGPT base-state generator; not a dynamic sequence generator",
-      "rows": 50400,
-      "missing_values": 0,
-      "non_finite_values": 0,
-      "label_counts": {
-        "-3": 2291,
-        "-2": 4308,
-        "-1": 11253,
-        "0": 11131,
-        "1": 6090,
-        "2": 8219,
-        "3": 7108
-      },
-      "exact_duplicate_states": 1492,
-      "feature_ranges": {
-        "Wrist_Skin_Temperature": {
-          "min": 28.64,
-          "max": 36.68
-        },
-        "GSR": {
-          "min": 0.0051243999999999,
-          "max": 5.439767
-        },
-        "Ambient_Temperature": {
-          "min": 18.6,
-          "max": 36.2
-        },
-        "Ambient_Humidity": {
-          "min": 14.0,
-          "max": 52.0
         }
       }
     }

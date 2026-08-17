@@ -1,5 +1,3 @@
-"""Audit corrected four-feature, every-10 synthetic outputs."""
-
 from __future__ import annotations
 
 import json
@@ -14,12 +12,13 @@ from temporal_utils import TARGET
 
 ROOT = Path("F:/synthetic")
 EXPLICIT = {
-    "DeepSeekV5": ROOT / "llm_synthetic/every10/approach_a_v5_events.csv",
+    "DeepSeekV5B10": ROOT
+    / "llm_synthetic/every10/approach_a_v5_events_b10.csv",
+    "SparseNaiveB10": ROOT
+    / "llm_synthetic/every10/sparse_naive_events_b10.csv",
     "TVAE": ROOT / "llm_synthetic/every10/sdv/tvae/synthetic.csv",
     "CTGAN": ROOT / "llm_synthetic/every10/sdv/ctgan/synthetic.csv",
-    "TabGPT": ROOT / "llm_synthetic/every10/tabgpt/synthetic.csv",
 }
-BASEGPT = ROOT / "llm_synthetic/every10/basegpt/base_states.csv"
 REAL = ROOT / "dataset/processed_every10/train_sequences.csv"
 OUTPUT = ROOT / "results/every10/generation_audit.json"
 
@@ -110,29 +109,6 @@ def main() -> None:
             name: explicit_audit(path, real_min, real_max)
             for name, path in EXPLICIT.items()
         },
-    }
-    base = pd.read_csv(BASEGPT)
-    audit["methods"]["BaseGPT"] = {
-        "path": str(BASEGPT),
-        "role": "TabGPT base-state generator; not a dynamic sequence generator",
-        "rows": int(len(base)),
-        "missing_values": int(base[[*FEATURES, TARGET]].isna().sum().sum()),
-        "non_finite_values": int(
-            (~np.isfinite(base[FEATURES].to_numpy(dtype=float))).sum()
-        ),
-        "label_counts": label_counts(base[TARGET].astype(int)),
-        "exact_duplicate_states": int(
-            len(base)
-            - len(
-                {
-                    (int(label), np.round(values, 7).tobytes())
-                    for values, label in zip(
-                        base[FEATURES].to_numpy(dtype=float), base[TARGET]
-                    )
-                }
-            )
-        ),
-        "feature_ranges": feature_ranges(base),
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(audit, ensure_ascii=False, indent=2), encoding="utf-8")

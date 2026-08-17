@@ -1,11 +1,3 @@
-"""Train TVAE and CTGAN on the shared four-feature sequence table.
-
-Each real 30-step sequence is represented as one wide SDV row (4 x 30 sensor
-columns plus its fixed comfort label).  Generated wide rows are converted back
-to explicit SequenceID/Step files, so SDV and LLM-style methods are evaluated
-with the same sequence semantics and the same 50,400-row budget.
-"""
-
 from __future__ import annotations
 
 import argparse

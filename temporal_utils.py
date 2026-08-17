@@ -1,5 +1,3 @@
-"""Shared utilities for session-aware thermal-comfort time-series work."""
-
 from __future__ import annotations
 
 import re

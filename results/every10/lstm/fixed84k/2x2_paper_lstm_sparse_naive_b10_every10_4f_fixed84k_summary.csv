@@ -1,0 +1,3 @@
+method,direction,f1,f1,acc,acc
+,,mean,std,mean,std
+sparse_naive_b10_every10_4f_fixed84k,sparse_naive_b10_every10_4f_fixed84k->Real,0.3621538943337394,0.02606341635978623,0.5237619684958303,0.021191771311697236
